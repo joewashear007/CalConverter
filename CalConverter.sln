@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CalConverter", "CalConverter\CalConverter.csproj", "{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalConverter.Lib", "CalConverter.Lib\CalConverter.Lib.csproj", "{B8979CC2-2154-4B2C-A48A-CDB41967A77C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalConverter.Lib.Tests", "CalConverter.Lib.Tests\CalConverter.Lib.Tests.csproj", "{A2F1721A-A694-4D11-8830-CD27C329E986}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C25DBB5-A1C8-4D36-97BC-E1570EF2095E}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{B8979CC2-2154-4B2C-A48A-CDB41967A77C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8979CC2-2154-4B2C-A48A-CDB41967A77C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8979CC2-2154-4B2C-A48A-CDB41967A77C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8979CC2-2154-4B2C-A48A-CDB41967A77C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2F1721A-A694-4D11-8830-CD27C329E986}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2F1721A-A694-4D11-8830-CD27C329E986}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2F1721A-A694-4D11-8830-CD27C329E986}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2F1721A-A694-4D11-8830-CD27C329E986}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5F13C0BD-091C-4335-833B-145364A65920}
+	EndGlobalSection
+EndGlobal

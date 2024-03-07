@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CalConverter.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+
+            <Label
+                Text="CalConvert"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Label
+                Text="Please choose an preceptor template"
+                Style="{StaticResource SubHeadline}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
+
+            <Button
+                x:Name="OpenFileButton"
+                Text="Open File" 
+                SemanticProperties.Hint="Open file to start processing"
+                Clicked="OnOpenFileClicked"
+                HorizontalOptions="Fill" />
+
+            <Label Text="Please load a file before continuing" x:Name="FileNameLabel" />
+
+            <Button
+                x:Name="ProcessButton"
+                Text="Convert to iCal Events" 
+                Clicked="OnProcessClicked"
+                HorizontalOptions="Fill" />
+
+            <Editor 
+                x:Name="Status"
+                IsReadOnly="True"
+                HorizontalOptions="Fill"
+                VerticalOptions="End"
+                HeightRequest="48"
+                
+            />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
