@@ -23,15 +23,29 @@
                 x:Name="OpenFileButton"
                 Text="Open File" 
                 SemanticProperties.Hint="Open file to start processing"
-                Clicked="OnOpenFileClicked"
+                Command="{Binding LoadFile}"
                 HorizontalOptions="Fill" />
 
-            <Label Text="Please load a file before continuing" x:Name="FileNameLabel" />
-
+            <HorizontalStackLayout >
+                <Label Text="{Binding FileName}"  />
+                <VerticalStackLayout>
+                    <Label Text="Export Start Date" />
+                    <DatePicker x:Name="StartDate" Date="{Binding StartDate}" />
+                </VerticalStackLayout>
+                
+                <VerticalStackLayout>
+                    <Label Text="Export End Date" />
+                    <DatePicker x:Name="EndDate" Date="{Binding EndDate}" />
+                </VerticalStackLayout>
+                <VerticalStackLayout>
+                    <Label Text="Export File per Preceptor" />
+                    <CheckBox x:Name="FilePerPerson" IsChecked="{Binding FilePerPerson}" />
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
             <Button
                 x:Name="ProcessButton"
                 Text="Convert to iCal Events" 
-                Clicked="OnProcessClicked"
+                Command="{Binding ProcessFile}"
                 HorizontalOptions="Fill" />
 
             <Editor 

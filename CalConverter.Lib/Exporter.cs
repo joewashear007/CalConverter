@@ -12,17 +12,23 @@ using System.Threading.Tasks;
 namespace CalConverter.Lib;
 public class Exporter()
 {
-    public Dictionary<string, string> EmailMapping { get; set; } = new Dictionary<string, string>();
+    public ExportOptions Options { get; set; } = new ExportOptions();
 
-    public Calendar Calendar { get; private set; } =  new Calendar();
+    public Dictionary<string, Calendar> Calendars { get; private set; } = [];
 
 
-    public MemoryStream ToStream()
+    public MemoryStream ToStream(string key = "ALL")
     {
-        MemoryStream stream = new();
-        var serializer = new CalendarSerializer();
-        serializer.Serialize(Calendar, stream, Encoding.UTF8);
-        return stream;
+        if (Calendars.TryGetValue(key, out var calendar))
+        {
+            MemoryStream stream = new();
+            var serializer = new CalendarSerializer();
+            serializer.Serialize(calendar, stream, Encoding.UTF8);
+            return stream;
+        } else
+        {
+            throw new ArgumentException("Can't fine the key");
+        }
     }
 
 
@@ -33,32 +39,54 @@ public class Exporter()
 
         if (DateOnly.TryParse(block.Date.Value, out var date))
         {
-            foreach (var preceptor in block.MorningShift.Percepters)
+            if (Options.ExportStartDate <= date && date <= Options.ExportEndDate)
             {
-                CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor);
-                Calendar.Events.Add(@event);    
-            }
-            foreach (var preceptor in block.MorningShift.Admins)
-            {
-                CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor, isAdminTime: true);
-                Calendar.Events.Add(@event);
-            }
+                foreach (var preceptor in block.MorningShift.Percepters)
+                {
+                    CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor);
+                    AddToCalendar(preceptor, @event);
+                }
+                foreach (var preceptor in block.MorningShift.Admins)
+                {
+                    CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor, isAdminTime: true);
+                    AddToCalendar(preceptor, @event);
+                }
 
-            foreach (var preceptor in block.AfternoonShift.Percepters)
-            {
-                CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor);
-                Calendar.Events.Add(@event);
+                foreach (var preceptor in block.AfternoonShift.Percepters)
+                {
+                    CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor);
+                    AddToCalendar(preceptor, @event);
+                }
+                foreach (var preceptor in block.AfternoonShift.Admins)
+                {
+                    CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor, isAdminTime: true);
+                    AddToCalendar(preceptor, @event);
+                }
             }
-            foreach (var preceptor in block.AfternoonShift.Admins)
-            {
-                CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor, isAdminTime: true);
-                Calendar.Events.Add(@event);
-            }
-
         }
         else
         {
             throw new InvalidOperationException($"Can't convert {date} to date");
+        }
+    }
+
+    /// <summary>
+    /// Add to calendar based on preceptor
+    /// </summary>
+    /// <param name="preceptor"></param>
+    /// <param name="event"></param>
+    private void AddToCalendar(ScheduleBlockPerson preceptor, CalendarEvent @event)
+    {
+        string key = Options.FilePerPerson ? preceptor.Attending.Value.ToLower() : "ALL";
+        if (Calendars.TryGetValue(key, out var calendar))
+        {
+            calendar.Events.Add(@event);
+        }
+        else
+        {
+            calendar = new Calendar();
+            calendar.Events.Add(@event);
+            Calendars.Add(key, calendar);
         }
     }
 
@@ -68,8 +96,8 @@ public class Exporter()
         {
             CommonName = preceptor.Attending.Value,
             Value = new Uri($"mailto:example@abc.com")
-        };    
-        if (preceptor.Attending.Value != null && EmailMapping.TryGetValue(preceptor.Attending.Value, out string email))
+        };
+        if (preceptor.Attending.Value != null && Options.UserEmailMap.TryGetValue(preceptor.Attending.Value, out string email))
         {
             attendee.Value = new Uri($"mailto:{email}");
         }

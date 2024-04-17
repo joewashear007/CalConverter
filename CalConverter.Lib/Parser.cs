@@ -75,7 +75,7 @@ public class Parser
 
 
 
-    public List<ScheduleBlock> ProcessFile(string fileName, string sheetName)
+    public IEnumerable<ScheduleBlock> ProcessFile(string fileName, string sheetName)
     {
         List<ScheduleBlock> blocks = [];
         using SpreadsheetDocument document = SpreadsheetDocument.Open(fileName, false);
@@ -105,7 +105,7 @@ public class Parser
 
             }
 
-            return blocks;
+            return blocks.Where(q => q.AfternoonShift.Percepters.Any() || q.MorningShift.Percepters.Any());
         }
         else
         {
@@ -183,7 +183,7 @@ public class Parser
         else
         {
             bool isDate = false;
-            var text = c?.CellValue?.Text;
+            string? text = c?.CellValue?.Text;
             CellDataType datatype = CellDataType.String;
 
             var fill = cellFormatLookup[(int)c.StyleIndex.Value];
@@ -220,7 +220,7 @@ public class Parser
             {
                  colorName = Utils.GetColorName(color);
             }
-            return new SimpleCellData(c.CellReference, text, datatype, colorName);
+            return new SimpleCellData(c.CellReference, text ?? "NO_DATA", datatype, colorName);
         }
     }
 
