@@ -34,6 +34,8 @@ public class ScheduleBlockPerson
     public SimpleCellData Room { get; set; }
     public SimpleCellData Attending { get; set; }
 
+    public string EventLabel { get; set; } = string.Empty;
+
     public override string ToString()
     {
         if (string.IsNullOrEmpty(Room?.Value))

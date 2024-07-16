@@ -1,4 +1,6 @@
-﻿namespace CalConverter;
+﻿using MetroLog.Maui;
+
+namespace CalConverter;
 
 public partial class App : Application
 {
@@ -7,5 +9,10 @@ public partial class App : Application
         InitializeComponent();
 
         MainPage = new AppShell();
+
+
+        LogController.InitializeNavigation(
+            page => MainPage!.Navigation.PushModalAsync(page),
+            () => MainPage!.Navigation.PopModalAsync());
     }
 }

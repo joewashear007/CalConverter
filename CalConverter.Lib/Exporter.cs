@@ -112,6 +112,14 @@ public class Exporter()
             @event.Resources.Add("Admin Time");
             @event.Summary = preceptor.Attending.Value + " [Admin Time]";
         }
+        else if (!string.IsNullOrEmpty(preceptor.EventLabel )) {
+            @event.Summary = preceptor.Attending.Value + " [" + preceptor.EventLabel + "]";
+            @event.Resources.Add(preceptor.EventLabel);
+            if (preceptor.Room != null && !string.IsNullOrEmpty(preceptor.Room.Value))
+            {
+                @event.Resources.Add(preceptor.Room.Value);
+            }
+        }
         else
         {
             @event.Summary = preceptor.Attending.Value;

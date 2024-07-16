@@ -1,22 +1,19 @@
 ﻿using CalConverter.Lib;
-using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Maui.Storage;
 using CommunityToolkit.Mvvm.Input;
-using DocumentFormat.OpenXml.Wordprocessing;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
+using System.Text.RegularExpressions;
 
 namespace CalConverter;
-public class MainPageViewModel : INotifyPropertyChanged
+public partial class MainPageViewModel : INotifyPropertyChanged
 {
     private bool isProcessing;
     private DateTime endDate;
     private DateTime startDate;
     private FileResult? file;
-    private readonly Parser parser;
-    private readonly Exporter exporter;
-    private readonly IFilePicker filePicker;
+    private IServiceProvider serviceProvider;
+    private IFilePicker filePicker;
     private string statusMessages = "";
 
     private PickOptions options = new()
@@ -34,12 +31,11 @@ public class MainPageViewModel : INotifyPropertyChanged
     };
     private bool filePerPerson;
 
-    public MainPageViewModel(Parser parser, Exporter exporter, IFilePicker filePicker)
+    public MainPageViewModel(IServiceProvider serviceProvider, IFilePicker filePicker)
     {
 
         File = null;
-        this.parser = parser;
-        this.exporter = exporter;
+        this.serviceProvider = serviceProvider;
         this.filePicker = filePicker;
         this.StartDate = DateTime.Today;
         this.EndDate = DateTime.Today.AddMonths(6);
@@ -75,9 +71,12 @@ public class MainPageViewModel : INotifyPropertyChanged
         ProcessFile = new AsyncRelayCommand(
             execute: async () =>
             {
+                StatusMessages = $"Staring to Process File '{FileName}' ...";
                 IsProcessing = true;
                 try
                 {
+                    var exporter = serviceProvider.GetRequiredService<Exporter>();
+                    var parser = serviceProvider.GetRequiredService<Parser>();
                     exporter.Options.ExportStartDate = DateOnly.FromDateTime(StartDate.Date);
                     exporter.Options.ExportEndDate = DateOnly.FromDateTime(EndDate.Date);
                     exporter.Options.FilePerPerson = filePerPerson;
@@ -96,35 +95,35 @@ public class MainPageViewModel : INotifyPropertyChanged
                             foreach (var key in exporter.Calendars.Keys.Where(q => q != "ALL"))
                             {
                                 using var stream = exporter.ToStream(key);
-                                string filename = Path.Join(folderPickerResult.Folder.Path, $"preceptor-{key}.ics");
+                                string cleanFileName = CleanStringRegex().Replace(key, "");
+                                string filename = Path.Join(folderPickerResult.Folder.Path, $"preceptor-{cleanFileName}.ics");
                                 using var sw = new FileStream(filename, FileMode.OpenOrCreate);
                                 stream.Seek(0, SeekOrigin.Begin);
                                 await stream.CopyToAsync(sw);
+                                StatusMessages += $"{Environment.NewLine}Saving Generated File: '{filename}'";
                             }
-                            await Toast.Make($"The file was saved successfully to location: {folderPickerResult.Folder.Path}").Show();
                         }
                         else
                         {
-                            await Toast.Make($"The file was not saved successfully with error: {folderPickerResult.Exception.Message}").Show();
+                            StatusMessages += $"{Environment.NewLine}Failed to get Folder to Save too!'";
                         }
                     }
                     else
                     {
                         using var stream = exporter.ToStream();
                         var fileSaverResult = await FileSaver.Default.SaveAsync("preceptor.ics", stream);
-                        if (fileSaverResult.IsSuccessful)
+                        StatusMessages += $"{Environment.NewLine}Saving Generated File: '{fileSaverResult.FilePath}'";
+                        if (!fileSaverResult.IsSuccessful)
                         {
-                            await Toast.Make($"The file was saved successfully to location: {fileSaverResult.FilePath}").Show();
+                            StatusMessages += $"{Environment.NewLine}The file was not saved successfully with error: {fileSaverResult.Exception.Message}";
                         }
-                        else
-                        {
-                            await Toast.Make($"The file was not saved successfully with error: {fileSaverResult.Exception.Message}").Show();
-                        }
+                        
                     }
+                    StatusMessages += $"{Environment.NewLine}Process Complete!";
                 }
                 catch (Exception ex)
                 {
-                    StatusMessages = "Error!" ;
+                    StatusMessages += $"{Environment.NewLine}================ Error! ==========================";
                     Exception? e = ex;
                     do
                     {
@@ -137,9 +136,9 @@ public class MainPageViewModel : INotifyPropertyChanged
                 }
                 finally
                 {
-                    ProcessFile?.NotifyCanExecuteChanged();
-                    LoadFile.NotifyCanExecuteChanged();
                     IsProcessing = false;
+                    LoadFile.NotifyCanExecuteChanged();
+                    ProcessFile?.NotifyCanExecuteChanged();
                 }
             },
             canExecute: () =>
@@ -168,7 +167,7 @@ public class MainPageViewModel : INotifyPropertyChanged
 
     public string FileName
     {
-        get { return file?.FileName ?? "No File Loaded"; }
+        get { return file != null ? $"Loaded File: '{file.FileName}'" : "No File Loaded"; }
     }
 
     public DateTime StartDate
@@ -216,5 +215,6 @@ public class MainPageViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-
+    [GeneratedRegex(@"[^\w\.]", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex CleanStringRegex();
 }

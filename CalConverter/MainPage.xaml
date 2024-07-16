@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="CalConverter.MainPage">
+             x:Class="CalConverter.MainPage"
+             >
 
     <ScrollView>
         <VerticalStackLayout
@@ -26,18 +27,18 @@
                 Command="{Binding LoadFile}"
                 HorizontalOptions="Fill" />
 
+            <Label Text="{Binding FileName}"  />
             <HorizontalStackLayout >
-                <Label Text="{Binding FileName}"  />
-                <VerticalStackLayout>
+                <VerticalStackLayout Margin="10, 25">
                     <Label Text="Export Start Date" />
                     <DatePicker x:Name="StartDate" Date="{Binding StartDate}" />
                 </VerticalStackLayout>
-                
-                <VerticalStackLayout>
+
+                <VerticalStackLayout Margin="10, 25">
                     <Label Text="Export End Date" />
                     <DatePicker x:Name="EndDate" Date="{Binding EndDate}" />
                 </VerticalStackLayout>
-                <VerticalStackLayout>
+                <VerticalStackLayout Margin="10, 25">
                     <Label Text="Export File per Preceptor" />
                     <CheckBox x:Name="FilePerPerson" IsChecked="{Binding FilePerPerson}" />
                 </VerticalStackLayout>
@@ -53,7 +54,9 @@
                 IsReadOnly="True"
                 HorizontalOptions="Fill"
                 VerticalOptions="End"
-                HeightRequest="48"
+                Text="{Binding StatusMessages}"
+                AutoSize="TextChanges"
+                HeightRequest="200"
                 
             />
         </VerticalStackLayout>

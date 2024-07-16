@@ -287,8 +287,23 @@ public class Parser
                     }
                     if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.String)
                     {
-                        // a room / attending call
-                        curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, Room = curCell });
+                        // special case ACUTE clinic, attending name is on the next line
+                        if (neighborCell.Value.Trim().Equals("ACUTE", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            var nextCell = GetCellData(sheetData.GetRelativeCell(neighborCell, rowOffset: 1));
+                            if (nextCell.DataType == CellDataType.String)
+                            {
+                                curPersonList.Add(new ScheduleBlockPerson() { Attending = nextCell, Room = curCell, EventLabel = "Acute Clinic" });
+                            }
+                            // we are parsing two rows, so correct that in the increment loop
+                            curCell = GetCellData(sheetData.GetRelativeCell(curCell, rowOffset: 1));
+                            continue;
+                        }
+                        else
+                        {
+                            // a room / attending call
+                            curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, Room = curCell });
+                        }
                     }
                     if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.Empty)
                     {

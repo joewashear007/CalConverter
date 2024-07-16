@@ -1,6 +1,6 @@
 ﻿using CalConverter.Lib;
 using CommunityToolkit.Maui;
-using Microsoft.Extensions.DependencyInjection;
+using MetroLog.MicrosoftExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace CalConverter;
@@ -27,10 +27,38 @@ public static class MauiProgram
         builder.Services.AddSingleton<MainPageViewModel>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddTransient(a => FilePicker.Default);
-
+        builder.Logging
 #if DEBUG
-        builder.Logging.AddDebug();
+                   .AddTraceLogger(
+                       options =>
+                       {
+                           options.MinLevel = LogLevel.Trace;
+                           options.MaxLevel = LogLevel.Critical;
+                       }) // Will write to the Debug Output
 #endif
+                   .AddInMemoryLogger(
+                       options =>
+                       {
+                           options.MaxLines = 1024;
+                           options.MinLevel = LogLevel.Debug;
+                           options.MaxLevel = LogLevel.Critical;
+                       })
+#if RELEASE
+            .AddStreamingFileLogger(
+                options =>
+                {
+                    options.RetainDays = 2;
+                    options.FolderPath = Path.Combine(
+                        FileSystem.CacheDirectory,
+                        "MetroLogs");
+                })
+#endif
+                   .AddConsoleLogger(
+                       options =>
+                       {
+                           options.MinLevel = LogLevel.Information;
+                           options.MaxLevel = LogLevel.Critical;
+                       }); 
 
         return builder.Build();
     }
