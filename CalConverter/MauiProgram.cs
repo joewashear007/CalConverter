@@ -1,4 +1,5 @@
 ﻿using CalConverter.Lib;
+using CalConverter.Lib.Parsers;
 using CommunityToolkit.Maui;
 using MetroLog.MicrosoftExtensions;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,10 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
 
         builder.Logging.AddConsole();
-        builder.Services.AddTransient<Parser>();
+        builder.Services.AddTransient<BaseParser, PreceptorSchedule>();
+        builder.Services.AddTransient<BaseParser, DidacticSchedule>();
+        builder.Services.AddTransient<PreceptorSchedule>();
+        builder.Services.AddTransient<DidacticSchedule>();
         builder.Services.AddTransient<Exporter>();
 
         builder

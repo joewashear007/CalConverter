@@ -14,11 +14,18 @@
                 Style="{StaticResource Headline}"
                 SemanticProperties.HeadingLevel="Level1" />
 
-            <Label
+            <HorizontalStackLayout >
+                <Label
                 Text="Please choose an preceptor template"
                 Style="{StaticResource SubHeadline}"
                 SemanticProperties.HeadingLevel="Level2"
                 SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
+                <StackLayout RadioButtonGroup.SelectedValue="{Binding ParserName}">
+                    <Label Text="File Type?" />
+                    <RadioButton Content="Preceptor Schedule" IsChecked="true" Value="PreceptorSchedule" />
+                    <RadioButton Content="Didactic Schedule" Value="DidacticSchedule" />
+                </StackLayout>
+            </HorizontalStackLayout>
 
             <Button
                 x:Name="OpenFileButton"

@@ -34,32 +34,29 @@ public class Exporter()
 
     public void AddToCalendar(ScheduleBlock block)
     {
-        TimeOnly MorningShiftStart = new TimeOnly(8, 0, 0);
-        TimeOnly AfternoonShiftStart = new TimeOnly(13, 0, 0);
-
         if (DateOnly.TryParse(block.Date.Value, out var date))
         {
             if (Options.ExportStartDate <= date && date <= Options.ExportEndDate)
             {
                 foreach (var preceptor in block.MorningShift.Percepters)
                 {
-                    CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor);
+                    CalendarEvent @event = CreateEventFromShift(date, preceptor);
                     AddToCalendar(preceptor, @event);
                 }
                 foreach (var preceptor in block.MorningShift.Admins)
                 {
-                    CalendarEvent @event = CreateEventFromShift(MorningShiftStart, date, preceptor, isAdminTime: true);
+                    CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
                     AddToCalendar(preceptor, @event);
                 }
 
                 foreach (var preceptor in block.AfternoonShift.Percepters)
                 {
-                    CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor);
+                    CalendarEvent @event = CreateEventFromShift(date, preceptor);
                     AddToCalendar(preceptor, @event);
                 }
                 foreach (var preceptor in block.AfternoonShift.Admins)
                 {
-                    CalendarEvent @event = CreateEventFromShift(AfternoonShiftStart, date, preceptor, isAdminTime: true);
+                    CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
                     AddToCalendar(preceptor, @event);
                 }
             }
@@ -90,7 +87,7 @@ public class Exporter()
         }
     }
 
-    private CalendarEvent CreateEventFromShift(TimeOnly startTime, DateOnly date, ScheduleBlockPerson preceptor, bool isAdminTime = false)
+    private CalendarEvent CreateEventFromShift(DateOnly date, ScheduleBlockPerson preceptor, bool isAdminTime = false)
     {
         var attendee = new Attendee
         {
@@ -103,8 +100,8 @@ public class Exporter()
         }
         var @event = new CalendarEvent()
         {
-            Start = new CalDateTime(date.ToDateTime(startTime)),
-            Duration = new TimeSpan(4, 0, 0),
+            Start = new CalDateTime(date.ToDateTime(preceptor.StartTime)),
+            Duration = preceptor.Duration,
             Attendees = [attendee]
         };
         if (isAdminTime)

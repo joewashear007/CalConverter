@@ -1,19 +1,13 @@
 ﻿
 using CalConverter.Lib.Models;
 using DocumentFormat.OpenXml.Drawing;
-using DocumentFormat.OpenXml.Office2010.CustomUI;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml.Vml;
-using DocumentFormat.OpenXml.Vml.Spreadsheet;
-using DocumentFormat.OpenXml.Wordprocessing;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Reflection.Metadata;
 
 namespace CalConverter.Lib;
 
-public class Parser
+public abstract class BaseParser
 {
     /// <summary>
     /// <see cref="https://stackoverflow.com/a/4730266"/>
@@ -63,21 +57,21 @@ public class Parser
         { 70, false }, // = 't# ??/??';
     }).ToImmutableDictionary();
 
-    private Dictionary<int, DocumentFormat.OpenXml.Spreadsheet.Fill> patternRgbLookup { get; set; } = new();
-    private Dictionary<int, DocumentFormat.OpenXml.Spreadsheet.Fill> cellFormatLookup { get; set; } = new();
+    protected Dictionary<int, DocumentFormat.OpenXml.Spreadsheet.Fill> patternRgbLookup { get; set; } = new();
+    protected Dictionary<int, DocumentFormat.OpenXml.Spreadsheet.Fill> cellFormatLookup { get; set; } = new();
 
-    private Dictionary<uint, string> themeColorLookup { get; set; } = new();
+    protected Dictionary<uint, string> themeColorLookup { get; set; } = new();
 
-    private Dictionary<int, bool> isDateFormattingLookup { get; set; } = new();
-    private Dictionary<int, SharedStringItem> textLookup { get; set; } = new();
-    private Dictionary<string, string> mergedCells { get; set; } = new();
-    private SortedDictionary<string, List<string>> mergedCellGroups { get; set; } = new();
+    protected Dictionary<int, bool> isDateFormattingLookup { get; set; } = new();
+    protected Dictionary<int, SharedStringItem> textLookup { get; set; } = new();
+    protected Dictionary<string, string> mergedCells { get; set; } = new();
+    protected SortedDictionary<string, List<string>> mergedCellGroups { get; set; } = new();
 
-
+    public abstract string SheetName { get; }
 
     public IEnumerable<ScheduleBlock> ProcessFile(string fileName, string sheetName)
     {
-        List<ScheduleBlock> blocks = [];
+        
         using SpreadsheetDocument document = SpreadsheetDocument.Open(fileName, false);
 
         if (TryGetWorkSheet(document, sheetName, out WorksheetPart workSheetPart))
@@ -88,24 +82,7 @@ public class Parser
             ParseTextStrings(document);
             ParseMergeCells(workSheetPart);
 
-            var firstCell = GetCellData(sheetData.Descendants<Cell>().First());
-
-            foreach (var cell in mergedCellGroups.Keys)
-            {
-                bool isDate = false;
-                var cellObj = sheetData.Descendants<Cell>().FirstOrDefault(q => q.CellReference == cell);
-                var simpleCell = GetCellData(cellObj);
-
-                if (simpleCell.DataType == CellDataType.Date
-                    && simpleCell.Color != firstCell.Color)
-                {
-                    blocks.Add(FindSecheduled(sheetData, simpleCell, firstCell));
-                }
-
-
-            }
-
-            return blocks.Where(q => q.AfternoonShift.Percepters.Any() || q.MorningShift.Percepters.Any());
+            return ProcessSheet(fileName, sheetName, sheetData); 
         }
         else
         {
@@ -113,6 +90,8 @@ public class Parser
         }
     }
 
+
+    public abstract IEnumerable<ScheduleBlock> ProcessSheet(string fileName, string sheetName, SheetData? sheetData);
 
     public void ParseMergeCells(WorksheetPart worksheetPart)
     {
@@ -174,7 +153,75 @@ public class Parser
               .ToDictionary(pair => pair.index, pair => pair.value);
     }
 
-    private SimpleCellData? GetCellData(Cell? c)
+
+    private bool TryGetWorkSheet(SpreadsheetDocument document, string sheetName, out WorksheetPart workSheetPart)
+    {
+        workSheetPart = default;
+        Sheet? sheet = document.WorkbookPart?.Workbook.Descendants<Sheet>().Where(s => s.Name == sheetName).FirstOrDefault();
+
+        if (sheet is not null)
+        {
+            if (sheet.Id is not null)
+            {
+                // The specified worksheet does not exist.
+                workSheetPart = (WorksheetPart?)document.WorkbookPart?.GetPartById(sheet.Id);
+                if (workSheetPart != null)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    public string GetColorType(DocumentFormat.OpenXml.Spreadsheet.ColorType ct)
+    {
+        string o = "";
+        if (ct == null)
+        {
+            o += "NULL";
+        }
+        else
+        {
+            if (ct.Auto != null)
+            {
+                o += "System auto color";
+            }
+
+            if (ct.Rgb != null)
+            {
+                o += ct.Rgb.Value;
+            }
+
+            if (ct.Indexed != null)
+            {
+                o += $"Indexed color -> ${ct.Indexed.Value}";
+
+                //IndexedColors ic = (IndexedColors)styles.Stylesheet.Colors.IndexedColors.ChildElements[(int)bgc.Indexed.Value];         
+            }
+
+            if (ct.Theme != null)
+            {
+                //o += $"Theme -> {ct.Theme.Value}";
+
+                //Color2Type c2t = (Color2Type)sd.WorkbookPart.ThemePart.Theme.ThemeElements.ColorScheme.ChildElements[(int)ct.Theme.Value];
+
+                //o += $"RGB color model hex -> {c2t.RgbColorModelHex.Val}";
+
+                o += themeColorLookup[ct.Theme.Value];
+            }
+
+            //if (ct.Tint != null)
+            //{
+            //    o += $"Tint value -> {ct.Tint.Value}";
+            //}
+        }
+        return o;
+    }
+    
+    public SimpleCellData? GetCellData(Cell? c)
     {
         if (c is null)
         {
@@ -218,151 +265,9 @@ public class Parser
             string colorName = string.Empty;
             if (!string.IsNullOrEmpty(color))
             {
-                 colorName = Utils.GetColorName(color);
+                colorName = Utils.GetColorName(color);
             }
             return new SimpleCellData(c.CellReference, text ?? "NO_DATA", datatype, colorName);
         }
-    }
-
-
-    private bool TryGetWorkSheet(SpreadsheetDocument document, string sheetName, out WorksheetPart workSheetPart)
-    {
-        workSheetPart = default;
-        Sheet? sheet = document.WorkbookPart?.Workbook.Descendants<Sheet>().Where(s => s.Name == sheetName).FirstOrDefault();
-
-        if (sheet is not null)
-        {
-            if (sheet.Id is not null)
-            {
-                // The specified worksheet does not exist.
-                workSheetPart = (WorksheetPart?)document.WorkbookPart?.GetPartById(sheet.Id);
-                if (workSheetPart != null)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private ScheduleBlock FindSecheduled(SheetData sheetData, SimpleCellData cell, SimpleCellData firstCell)
-    {
-        ScheduleBlock block = new() { Date = cell };
-
-
-
-        SimpleCellData neighborCell;
-        SimpleCellData curCell = cell;
-        ScheduleBlockShift curShift = block.MorningShift;
-        List<ScheduleBlockPerson> curPersonList = curShift.Percepters;
-        do
-        {
-            curCell = GetCellData(sheetData.GetRelativeCell(curCell, rowOffset: 1));
-            if (curCell is not null)
-            {
-                if (curCell.DataType == CellDataType.TimeShift && curCell.Value == "PM")
-                {
-                    curShift = block.AfternoonShift;
-                    curPersonList = curShift.Percepters;
-                }
-                else
-                {
-                    neighborCell = GetCellData(sheetData.GetRelativeCell(curCell, colOffset: 1));
-                    if (curCell.DataType == CellDataType.Empty)
-                    {
-                        if (neighborCell.DataType == CellDataType.Empty)
-                        {
-                            if (curShift.Percepters.Count > 0)
-                            {
-                                // No Room and no Attending, break in the list person list if there some attentds
-                                // trying to miss the stupid extra lines
-                                curPersonList = curShift.Admins;
-                            }
-                        }
-                        else
-                        {
-                            curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell });
-                        }
-                    }
-                    if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.String)
-                    {
-                        // special case ACUTE clinic, attending name is on the next line
-                        if (neighborCell.Value.Trim().Equals("ACUTE", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            var nextCell = GetCellData(sheetData.GetRelativeCell(neighborCell, rowOffset: 1));
-                            if (nextCell.DataType == CellDataType.String)
-                            {
-                                curPersonList.Add(new ScheduleBlockPerson() { Attending = nextCell, Room = curCell, EventLabel = "Acute Clinic" });
-                            }
-                            // we are parsing two rows, so correct that in the increment loop
-                            curCell = GetCellData(sheetData.GetRelativeCell(curCell, rowOffset: 1));
-                            continue;
-                        }
-                        else
-                        {
-                            // a room / attending call
-                            curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, Room = curCell });
-                        }
-                    }
-                    if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.Empty)
-                    {
-                        // a room / no attending - what to do?
-                        curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, Room = curCell });
-                    }
-                }
-
-            }
-            else
-            {
-                break;
-            }
-        } while (curCell.Color != firstCell.Color);
-        return block;
-    }
-
-    private string GetColorType(DocumentFormat.OpenXml.Spreadsheet.ColorType ct)
-    {
-        string o = "";
-        if (ct == null)
-        {
-            o += "NULL";
-        }
-        else
-        {
-            if (ct.Auto != null)
-            {
-                o += "System auto color";
-            }
-
-            if (ct.Rgb != null)
-            {
-                o += ct.Rgb.Value;
-            }
-
-            if (ct.Indexed != null)
-            {
-                o += $"Indexed color -> ${ct.Indexed.Value}";
-
-                //IndexedColors ic = (IndexedColors)styles.Stylesheet.Colors.IndexedColors.ChildElements[(int)bgc.Indexed.Value];         
-            }
-
-            if (ct.Theme != null)
-            {
-                //o += $"Theme -> {ct.Theme.Value}";
-
-                //Color2Type c2t = (Color2Type)sd.WorkbookPart.ThemePart.Theme.ThemeElements.ColorScheme.ChildElements[(int)ct.Theme.Value];
-
-                //o += $"RGB color model hex -> {c2t.RgbColorModelHex.Val}";
-
-                o += themeColorLookup[ct.Theme.Value];
-            }
-
-            //if (ct.Tint != null)
-            //{
-            //    o += $"Tint value -> {ct.Tint.Value}";
-            //}
-        }
-        return o;
     }
 }

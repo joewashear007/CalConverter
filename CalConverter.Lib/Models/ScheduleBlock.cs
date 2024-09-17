@@ -33,6 +33,8 @@ public class ScheduleBlockPerson
 {
     public SimpleCellData Room { get; set; }
     public SimpleCellData Attending { get; set; }
+    public TimeSpan Duration { get; set; } = TimeSpan.FromHours(4);
+    public TimeOnly StartTime { get; set; } = new TimeOnly(8, 0, 0);
 
     public string EventLabel { get; set; } = string.Empty;
 

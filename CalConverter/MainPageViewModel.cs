@@ -1,4 +1,5 @@
 ﻿using CalConverter.Lib;
+using CalConverter.Lib.Parsers;
 using CommunityToolkit.Maui.Storage;
 using CommunityToolkit.Mvvm.Input;
 using System.ComponentModel;
@@ -15,6 +16,7 @@ public partial class MainPageViewModel : INotifyPropertyChanged
     private IServiceProvider serviceProvider;
     private IFilePicker filePicker;
     private string statusMessages = "";
+    private string parserName = "DidacticSchedule";
 
     private PickOptions options = new()
     {
@@ -75,13 +77,22 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                 IsProcessing = true;
                 try
                 {
+
+                    Type parserType = Type.GetType("CalConverter.Lib.Parsers." + ParserName + ", CalConverter.Lib");
+                    if(parserType == null)
+                    {
+                        throw new InvalidOperationException($"Failed to type of parser!'");
+                    }
+
+
+
                     var exporter = serviceProvider.GetRequiredService<Exporter>();
-                    var parser = serviceProvider.GetRequiredService<Parser>();
+                    BaseParser parser = serviceProvider.GetRequiredService(parserType) as BaseParser;
                     exporter.Options.ExportStartDate = DateOnly.FromDateTime(StartDate.Date);
                     exporter.Options.ExportEndDate = DateOnly.FromDateTime(EndDate.Date);
                     exporter.Options.FilePerPerson = filePerPerson;
 
-                    var items = parser.ProcessFile(File.FullPath, "Sheet1");
+                    var items = parser.ProcessFile(File.FullPath, parser.SheetName);
                     foreach (var item in items)
                     {
                         exporter.AddToCalendar(item);
@@ -148,6 +159,12 @@ public partial class MainPageViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
+   
+    public string ParserName
+    {
+        set { SetProperty(ref parserName, value); }
+        get { return parserName; }
+    }
 
     public bool IsProcessing
     {
