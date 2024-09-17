@@ -14,4 +14,6 @@ public class ExportOptions
     public DateOnly ExportEndDate { get; set; } = DateOnly.MaxValue;
 
     public bool FilePerPerson { get; set; } = true;
+
+    public bool ExportAdminTime { get; set; } = true;
 }

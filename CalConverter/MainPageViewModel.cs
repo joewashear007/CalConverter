@@ -31,7 +31,10 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                     { DevicePlatform.macOS, new[] { "com.microsoft.excel.xls" } }, // UTType values
                })
     };
-    private bool filePerPerson;
+    private bool filePerPerson = true;
+    private bool exportAdminTime = false;
+    private List<string> sheetNames = [];
+    private string sheet = "Sheet1";
 
     public MainPageViewModel(IServiceProvider serviceProvider, IFilePicker filePicker)
     {
@@ -52,6 +55,7 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                     if (result != null)
                     {
                         File = result;
+                        SheetNames = Utils.GetSheetNames(result.FullPath);
                     }
                 }
                 catch (Exception ex)
@@ -78,7 +82,7 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                 try
                 {
 
-                    Type parserType = Type.GetType("CalConverter.Lib.Parsers." + ParserName + ", CalConverter.Lib");
+                    Type parserType = Type.GetType("CalConverter.Lib.Parsers." + Parser + ", CalConverter.Lib");
                     if(parserType == null)
                     {
                         throw new InvalidOperationException($"Failed to type of parser!'");
@@ -91,8 +95,9 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                     exporter.Options.ExportStartDate = DateOnly.FromDateTime(StartDate.Date);
                     exporter.Options.ExportEndDate = DateOnly.FromDateTime(EndDate.Date);
                     exporter.Options.FilePerPerson = filePerPerson;
+                    exporter.Options.ExportAdminTime = exportAdminTime;
 
-                    var items = parser.ProcessFile(File.FullPath, parser.SheetName);
+                    var items = parser.ProcessFile(File.FullPath, Sheet);
                     foreach (var item in items)
                     {
                         exporter.AddToCalendar(item);
@@ -154,13 +159,20 @@ public partial class MainPageViewModel : INotifyPropertyChanged
             },
             canExecute: () =>
             {
-                return !IsProcessing && File != null;
+                return !IsProcessing && FileLoaded && !string.IsNullOrEmpty(Sheet);
             });
     }
 
     public event PropertyChangedEventHandler PropertyChanged;
    
-    public string ParserName
+    public List<string> ParserNames
+    {
+        get {
+            return Utils.GetParserNames();
+        }
+    }
+
+    public string Parser
     {
         set { SetProperty(ref parserName, value); }
         get { return parserName; }
@@ -168,16 +180,35 @@ public partial class MainPageViewModel : INotifyPropertyChanged
 
     public bool IsProcessing
     {
-        set { SetProperty(ref isProcessing, value); }
+        set { 
+            SetProperty(ref isProcessing, value);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileLoaded)));
+        }
         get { return isProcessing; }
+    }
+
+    public List<string> SheetNames
+    {
+        set { SetProperty(ref sheetNames, value); }
+        get { return sheetNames; }
+    }
+
+    public string Sheet
+    {
+        set { 
+            SetProperty(ref sheet, value);
+            ProcessFile.NotifyCanExecuteChanged();
+        }
+        get { return sheet; }
     }
 
     public FileResult? File
     {
         set
         {
-            SetProperty(ref file, value);
+            SetProperty(ref file, value);;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileName)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FileLoaded)));
         }
         get { return file; }
     }
@@ -210,7 +241,16 @@ public partial class MainPageViewModel : INotifyPropertyChanged
         get { return filePerPerson; }
     }
 
-    public bool ValidFileLoaded { get; set; } = false;
+    public bool ExportAdminTime
+    {
+        set { SetProperty(ref exportAdminTime, value); }
+        get { return exportAdminTime; }
+    }
+
+    public bool FileLoaded
+    {
+        get { return !IsProcessing && File != null; }
+    }
 
 
     public AsyncRelayCommand LoadFile { get; set; }

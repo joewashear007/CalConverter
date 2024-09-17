@@ -15,27 +15,27 @@
                 SemanticProperties.HeadingLevel="Level1" />
 
             <HorizontalStackLayout >
-                <Label
-                Text="Please choose an preceptor template"
-                Style="{StaticResource SubHeadline}"
-                SemanticProperties.HeadingLevel="Level2"
-                SemanticProperties.Description="Welcome to dot net Multi platform App U I" />
-                <StackLayout RadioButtonGroup.SelectedValue="{Binding ParserName}">
-                    <Label Text="File Type?" />
-                    <RadioButton Content="Preceptor Schedule" IsChecked="true" Value="PreceptorSchedule" />
-                    <RadioButton Content="Didactic Schedule" Value="DidacticSchedule" />
-                </StackLayout>
+                <VerticalStackLayout Margin="10, 25">
+                    <Label Text="Parser" />
+                    <Picker x:Name="parserPicker" ItemsSource="{Binding ParserNames}" SelectedItem="{Binding Parser}" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Margin="10, 40, 10, 25">
+                    <Button
+                    x:Name="OpenFileButton"
+                    Text="Open File" 
+                    SemanticProperties.Hint="Open file to start processing"
+                    Command="{Binding LoadFile}"
+                    HorizontalOptions="Fill"  />
+                </VerticalStackLayout>
             </HorizontalStackLayout>
 
-            <Button
-                x:Name="OpenFileButton"
-                Text="Open File" 
-                SemanticProperties.Hint="Open file to start processing"
-                Command="{Binding LoadFile}"
-                HorizontalOptions="Fill" />
 
             <Label Text="{Binding FileName}"  />
             <HorizontalStackLayout >
+                <VerticalStackLayout Margin="10, 25">
+                    <Label Text="SheetName" />
+                    <Picker x:Name="sheetPicker" ItemsSource="{Binding SheetNames}" SelectedItem="{Binding Sheet}" IsEnabled="{Binding FileLoaded}" />
+                </VerticalStackLayout>
                 <VerticalStackLayout Margin="10, 25">
                     <Label Text="Export Start Date" />
                     <DatePicker x:Name="StartDate" Date="{Binding StartDate}" />
@@ -48,6 +48,10 @@
                 <VerticalStackLayout Margin="10, 25">
                     <Label Text="Export File per Preceptor" />
                     <CheckBox x:Name="FilePerPerson" IsChecked="{Binding FilePerPerson}" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Margin="10, 25">
+                    <Label Text="Export Admin Events" />
+                    <CheckBox x:Name="ExportAdminTime" IsChecked="{Binding ExportAdminTime}" />
                 </VerticalStackLayout>
             </HorizontalStackLayout>
             <Button

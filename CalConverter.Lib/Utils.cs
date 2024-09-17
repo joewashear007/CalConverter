@@ -1,10 +1,13 @@
 ﻿using CalConverter.Lib.Models;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Vml;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -197,6 +200,29 @@ public static class Utils
 
             return "Unknown";
         }
+    }
+
+    public static List<string> GetSheetNames(string fileName)
+    {
+        using SpreadsheetDocument document = SpreadsheetDocument.Open(fileName, false);
+
+        return document.WorkbookPart?.Workbook.Descendants<Sheet>()
+            .Where(q => q.Name.HasValue)
+            .Select(s => s.Name.Value)
+            .Cast<string>()
+            .ToList() ?? [];
+    }
+
+    public static List<string> GetParserNames()
+    {
+        Type baseParser = typeof(BaseParser);
+        Assembly? assembly = Assembly.GetAssembly(baseParser);
+
+        return assembly.GetTypes()
+            .Where(q => q.BaseType == baseParser && q.IsClass && !q.IsAbstract)
+            .Select(q => q.Name)
+            .ToList();
+            
     }
 
 }

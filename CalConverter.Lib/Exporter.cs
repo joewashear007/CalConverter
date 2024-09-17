@@ -43,10 +43,13 @@ public class Exporter()
                     CalendarEvent @event = CreateEventFromShift(date, preceptor);
                     AddToCalendar(preceptor, @event);
                 }
-                foreach (var preceptor in block.MorningShift.Admins)
+                if (Options.ExportAdminTime)
                 {
-                    CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
-                    AddToCalendar(preceptor, @event);
+                    foreach (var preceptor in block.MorningShift.Admins)
+                    {
+                        CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
+                        AddToCalendar(preceptor, @event);
+                    }
                 }
 
                 foreach (var preceptor in block.AfternoonShift.Percepters)
@@ -54,10 +57,13 @@ public class Exporter()
                     CalendarEvent @event = CreateEventFromShift(date, preceptor);
                     AddToCalendar(preceptor, @event);
                 }
-                foreach (var preceptor in block.AfternoonShift.Admins)
+                if (Options.ExportAdminTime)
                 {
-                    CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
-                    AddToCalendar(preceptor, @event);
+                    foreach (var preceptor in block.AfternoonShift.Admins)
+                    {
+                        CalendarEvent @event = CreateEventFromShift(date, preceptor, isAdminTime: true);
+                        AddToCalendar(preceptor, @event);
+                    }
                 }
             }
         }
