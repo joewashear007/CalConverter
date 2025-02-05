@@ -97,8 +97,8 @@ public class PreceptorSchedule : BaseParser
         TimeOnly AfternoonShiftStart = new TimeOnly(13, 0, 0);
 
         TimeOnly startTime = MorningShiftStart;
-        SimpleCellData neighborCell;
-        SimpleCellData curCell = cell;
+        SimpleCellData? neighborCell;
+        SimpleCellData? curCell = cell;
         ScheduleBlockShift curShift = block.MorningShift;
         List<ScheduleBlockPerson> curPersonList = curShift.Percepters;
         do
@@ -114,10 +114,11 @@ public class PreceptorSchedule : BaseParser
                 }
                 else
                 {
-                    neighborCell = GetCellData(sheetData.GetRelativeCell(curCell, colOffset: 1));
+                    var neighborCellRef = sheetData.GetRelativeCell(curCell, colOffset: 1);
+                    neighborCell = GetCellData(neighborCellRef);
                     if (curCell.DataType == CellDataType.Empty)
                     {
-                        if (neighborCell.DataType == CellDataType.Empty)
+                        if (neighborCell == null || neighborCell.DataType == CellDataType.Empty)
                         {
                             if (curShift.Percepters.Count > 0)
                             {
@@ -131,7 +132,7 @@ public class PreceptorSchedule : BaseParser
                             curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, StartTime = startTime });
                         }
                     }
-                    if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.String)
+                    if (curCell.DataType == CellDataType.String && neighborCell != null && neighborCell.DataType == CellDataType.String)
                     {
                         // special case ACUTE clinic, attending name is on the next line
                         if (neighborCell.Value.Trim().Equals("ACUTE", StringComparison.InvariantCultureIgnoreCase))
@@ -151,7 +152,7 @@ public class PreceptorSchedule : BaseParser
                             curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, StartTime = startTime, Room = curCell });
                         }
                     }
-                    if (curCell.DataType == CellDataType.String && neighborCell.DataType == CellDataType.Empty)
+                    if (curCell.DataType == CellDataType.String && (neighborCell == null || neighborCell.DataType == CellDataType.Empty))
                     {
                         // a room / no attending - what to do?
                         curPersonList.Add(new ScheduleBlockPerson() { Attending = neighborCell, StartTime = startTime, Room = curCell });

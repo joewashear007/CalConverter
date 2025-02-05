@@ -116,6 +116,12 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                                 using var sw = new FileStream(filename, FileMode.OpenOrCreate);
                                 stream.Seek(0, SeekOrigin.Begin);
                                 await stream.CopyToAsync(sw);
+
+                                string summaryFile = Path.Join(folderPickerResult.Folder.Path, $"preceptor-{cleanFileName}.summary.txt");
+                                using StreamWriter writer = new StreamWriter(summaryFile);
+                                await writer.WriteAsync(CalendarUtils.Summarize(exporter.Calendars[key]));
+                                await writer.FlushAsync();
+
                                 StatusMessages += $"{Environment.NewLine}Saving Generated File: '{filename}'";
                             }
                         }
@@ -128,6 +134,12 @@ public partial class MainPageViewModel : INotifyPropertyChanged
                     {
                         using var stream = exporter.ToStream();
                         var fileSaverResult = await FileSaver.Default.SaveAsync("preceptor.ics", stream);
+
+                        string summaryFile = fileSaverResult.FilePath.Replace(".isc", ".summary.txt");
+                        using StreamWriter writer = new StreamWriter(summaryFile);
+                        await writer.WriteAsync(CalendarUtils.Summarize(exporter.Calendars["ALL"]));
+                        await writer.FlushAsync();
+
                         StatusMessages += $"{Environment.NewLine}Saving Generated File: '{fileSaverResult.FilePath}'";
                         if (!fileSaverResult.IsSuccessful)
                         {
